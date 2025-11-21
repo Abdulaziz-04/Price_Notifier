@@ -1,0 +1,6 @@
+fastapi==0.115.0
+uvicorn[standard]==0.23.2
+requests==2.31.0
+beautifulsoup4==4.12.2
+python-decouple==3.8
+twilio==9.0.5

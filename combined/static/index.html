@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Price Notifier + WhatsApp Scheduler</title>
+    <style>
+      :root {
+        --bg: #f5f7fb;
+        --card: #ffffff;
+        --border: #d7dce5;
+        --text: #111827;
+        --muted: #4b5563;
+        --accent: #2563eb;
+        --accent-2: #0ea5e9;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        font-family: "Inter", system-ui, -apple-system, sans-serif;
+        color: var(--text);
+      }
+      .wrap {
+        max-width: 920px;
+        margin: 0 auto;
+        padding: 28px 16px 48px;
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: 1.7rem;
+      }
+      .muted {
+        color: var(--muted);
+        margin: 0 0 18px;
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 18px;
+        box-shadow: 0 10px 26px rgba(17, 24, 39, 0.08);
+      }
+      label {
+        display: block;
+        margin-top: 12px;
+        font-weight: 600;
+      }
+      input {
+        width: 100%;
+        padding: 10px 12px;
+        margin-top: 6px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        font-size: 1rem;
+      }
+      input:focus {
+        outline: 2px solid rgba(37, 99, 235, 0.25);
+      }
+      .row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px;
+      }
+      button {
+        margin-top: 16px;
+        padding: 12px 14px;
+        width: 100%;
+        border: none;
+        border-radius: 10px;
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        color: white;
+        font-weight: 700;
+        font-size: 1rem;
+        cursor: pointer;
+        box-shadow: 0 8px 18px rgba(37, 99, 235, 0.25);
+      }
+      button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+      pre {
+        background: #0f172a;
+        color: #e5e7eb;
+        padding: 12px;
+        border-radius: 10px;
+        overflow: auto;
+        min-height: 100px;
+        border: 1px solid #1f2937;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Price Notifier with WhatsApp Alert</h1>
+      <p class="muted">
+        Check an item price and trigger a WhatsApp alert, optionally delayed.
+      </p>
+      <div class="card">
+        <label>Product URL</label>
+        <input
+          id="url"
+          type="url"
+          placeholder="https://www.example.com/product"
+        />
+
+        <div class="row">
+          <div>
+            <label>Target price</label>
+            <input
+              id="target"
+              type="number"
+              step="0.01"
+              placeholder="e.g. 199.99"
+            />
+          </div>
+          <div>
+            <label>Delay (minutes)</label>
+            <input id="delay" type="number" min="0" max="1440" value="0" />
+          </div>
+        </div>
+
+        <label>Override WhatsApp recipient (optional)</label>
+        <input
+          id="recipient"
+          type="text"
+          placeholder="+15551234567 or whatsapp:+15551234567"
+        />
+
+        <button id="submit">Check price & notify</button>
+
+        <div style="margin-top: 16px">
+          <div class="muted" style="margin-bottom: 6px">Response</div>
+          <pre id="output">Waiting for request...</pre>
+        </div>
+      </div>
+    </div>
+    <script>
+      const btn = document.getElementById("submit");
+      const output = document.getElementById("output");
+      const endpoint = `${window.location.origin}/api/notify`;
+
+      btn.addEventListener("click", async () => {
+        const url = document.getElementById("url").value.trim();
+        const target = parseFloat(document.getElementById("target").value);
+        const delay = parseInt(
+          document.getElementById("delay").value || "0",
+          10
+        );
+        const recipient =
+          document.getElementById("recipient").value.trim() || null;
+
+        if (!url || Number.isNaN(target)) {
+          output.textContent =
+            "Please provide a product URL and a valid target price.";
+          return;
+        }
+
+        btn.disabled = true;
+        output.textContent = "Sending request...";
+        try {
+          const res = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              url,
+              target_price: target,
+              delay_minutes: delay,
+              send_to: recipient,
+            }),
+          });
+          const data = await res.json();
+          output.textContent = JSON.stringify(data, null, 2);
+        } catch (err) {
+          output.textContent = `Error: ${err}`;
+        } finally {
+          btn.disabled = false;
+        }
+      });
+    </script>
+  </body>
+</html>
